@@ -1,9 +1,8 @@
 # PCA-EXP-5-MATRIX-MULTIPLICATION-USING-CUDA-AY-23-24
 <h3>AIM:</h3>
-<h3>ENTER YOUR NAME</h3>
-<h3>ENTER YOUR REGISTER NO</h3>
-<h3>EX. NO</h3>
-<h3>DATE</h3>
+<h3>ENTER YOUR NAME: KISHOOR I</h3>
+<h3>ENTER YOUR REGISTER NO: 212225040190</h3>
+<h3>EX. NO: 5</h3>
 <h1> <align=center> MATRIX MULTIPLICATION USING CUDA </h3>
   Implement Matrix Multiplication using GPU.</h3>
 
@@ -27,10 +26,95 @@ Google Colab with NVCC Compiler
 12.	Print Result: Print the result matrix and the elapsed time.
 13.	Free Device Memory: Finally, free the device memory that was allocated for the matrices.
 ## PROGRAM:
-TYPE YOUR CODE HERE
+```
+
+%%writefile matmul.cu
+#include <stdio.h>
+#include <stdlib.h>
+#include <cuda_runtime.h>
+#include <sys/time.h>
+
+#define SIZE 4
+#define BLOCK_SIZE 2
+
+__global__ void matrixMultiply(int *a, int *b, int *c, int size)
+{
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row < size && col < size)
+    {
+        int sum = 0;
+        for (int k = 0; k < size; k++)
+        {
+            sum += a[row * size + k] * b[k * size + col];
+        }
+        c[row * size + col] = sum;
+    }
+}
+
+int main()
+{
+    int a[SIZE][SIZE], b[SIZE][SIZE], c[SIZE][SIZE];
+    int *d_a, *d_b, *d_c;
+
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
+            a[i][j] = i + j;
+            b[i][j] = i - j;
+        }
+    }
+
+    cudaMalloc((void**)&d_a, SIZE * SIZE * sizeof(int));
+    cudaMalloc((void**)&d_b, SIZE * SIZE * sizeof(int));
+    cudaMalloc((void**)&d_c, SIZE * SIZE * sizeof(int));
+
+    cudaMemcpy(d_a, a, SIZE * SIZE * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, SIZE * SIZE * sizeof(int), cudaMemcpyHostToDevice);
+
+    dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 dimGrid(SIZE / BLOCK_SIZE, SIZE / BLOCK_SIZE);
+
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+
+    matrixMultiply<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, SIZE);
+    cudaDeviceSynchronize();
+
+    gettimeofday(&end, NULL);
+
+    cudaMemcpy(c, d_c, SIZE * SIZE * sizeof(int), cudaMemcpyDeviceToHost);
+
+    printf("Result Matrix:\n");
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
+            printf("%d ", c[i][j]);
+        }
+        printf("\n");
+    }
+
+    double elapsed = (end.tv_sec - start.tv_sec) +
+                     (end.tv_usec - start.tv_usec) / 1000000.0;
+
+    printf("Elapsed Time: %f seconds\n", elapsed);
+
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+
+    return 0;
+}
+```
 
 ## OUTPUT:
-SHOW YOUR OUTPUT HERE
+
+
+<img width="572" height="172" alt="WhatsApp Image 2026-11-23 at 2 25 53 PM" src="https://github.com/user-attachments/assets/f34ad9f9-eb77-4d62-92d7-7d37ab9a1806" />
+
 
 ## RESULT:
-Thus the program has been executed by using CUDA to mulptiply two matrices. It is observed that there are variations in host and device elapsed time. Device took ______________time and host took ___________time.
+The matrix multiplication operation was successfully implemented using CUDA. The program executed on the NVIDIA Tesla T4 GPU and produced the correct result matrix with an elapsed time of 0.000732 seconds.
